@@ -1,1 +1,5 @@
-export { resolveDID } from "./resolver";
+import NearDIDResolver from "./resolver";
+
+export {
+    NearDIDResolver
+};

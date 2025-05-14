@@ -1,8 +1,10 @@
-import { resolveDID } from "./../src";
+import { NearDIDResolver } from "../src";
 // import * as nearAPI from "near-api-js";
 // import bs58 from "bs58";
 
-// Mocks
+const CONTRACT_ID = "neardti.testnet";
+const RPC_URL = "https://rpc.testnet.near.org";
+
 jest.mock("near-api-js", () => {
   const original = jest.requireActual("near-api-js");
 
@@ -35,8 +37,14 @@ jest.mock("bs58", () => ({
 }));
 
 describe("resolveDID", () => {
+  let resolver: NearDIDResolver;
+
+  beforeEach(() => {
+    resolver = new NearDIDResolver(CONTRACT_ID, RPC_URL);
+  });
+
   it("should return a valid DID Document", async () => {
-    const doc = await resolveDID("did:near:CF5RiJYh4EVmEt8UADTjoP3XaZo1NPWxv6w5TmkLqjpR", "neardti.testnet");
+    const doc = await resolver.resolveDID("did:near:CF5RiJYh4EVmEt8UADTjoP3XaZo1NPWxv6w5TmkLqjpR");
 
     expect(doc).toEqual({
       "@context": "https://w3id.org/did/v1",
