@@ -4,16 +4,18 @@ import { Account, connect, keyStores, Near, providers } from "near-api-js";
 class NearDIDResolver {
   private readonly CONTRACT_ID: string;
   private readonly RPC_URL: string;
+  private readonly NETWORK_ID: string;
 
-  constructor(contract_id: string, rpc_url: string) {
+  constructor(contract_id: string, rpc_url: string, network_id: string = "testnet") {
     this.CONTRACT_ID = contract_id;
     this.RPC_URL = rpc_url;
+    this.NETWORK_ID = network_id;
   }
 
   async getNear(): Promise<Near> {
     const keyStore = new keyStores.InMemoryKeyStore();
     return await connect({
-      networkId: "testnet",
+      networkId: this.NETWORK_ID,
       keyStore,
       nodeUrl: this.RPC_URL,
       headers: {},
