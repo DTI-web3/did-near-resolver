@@ -1,0 +1,1 @@
+export { resolveDID } from "./resolver";

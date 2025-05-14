@@ -1,0 +1,31 @@
+{
+  "name": "@kaytrust/did-near-resolver",
+  "version": "1.2.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "typescript",
+    "libreria"
+  ],
+  "author": "Jerson Miranda (NTT Data)",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.17",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "near-api-js": "^5.1.1"
+  }
+}
