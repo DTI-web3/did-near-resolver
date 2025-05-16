@@ -1,5 +1,6 @@
-import NearDIDResolver from "./resolver";
+import NearDIDResolver, {getResolver} from "./resolver";
 
 export {
-    NearDIDResolver
+    NearDIDResolver,
+    getResolver
 };

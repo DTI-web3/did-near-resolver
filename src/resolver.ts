@@ -1,5 +1,6 @@
 import bs58 from "bs58";
 import { Account, connect, keyStores, Near, providers } from "near-api-js";
+import { DIDResolver } from 'did-resolver';
 
 class NearDIDResolver {
   private readonly CONTRACT_ID: string;
@@ -77,6 +78,20 @@ class NearDIDResolver {
 
     return document;
   }
+}
+
+export const getResolver = (...args: ConstructorParameters<typeof NearDIDResolver>): Record<string, DIDResolver> => {
+    const resolver = new NearDIDResolver(...args);
+    return {
+        near: async (did) => {
+          const didDocument = await resolver.resolveDID(did);
+          return {
+            didDocument,
+            didResolutionMetadata: { contentType: "application/did+json" },
+            didDocumentMetadata: {},
+          };
+        },
+    };
 }
 
 export default NearDIDResolver;
