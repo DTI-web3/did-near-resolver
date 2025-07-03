@@ -1,11 +1,10 @@
-import bs58 from "bs58";
-import { Account, connect, keyStores, Near, providers } from "near-api-js";
 import { DIDResolver } from 'did-resolver';
+import { Account, connect, keyStores } from "near-api-js";
 
-class NearDIDResolver {
-  private readonly CONTRACT_ID: string;
-  private readonly RPC_URL: string;
+export class NearDIDResolver {
   private readonly NETWORK_ID: string;
+  private readonly RPC_URL: string;
+  private readonly CONTRACT_ID: string;
 
   constructor(contract_id: string, rpc_url: string, network_id: string = "testnet") {
     this.CONTRACT_ID = contract_id;
@@ -13,61 +12,76 @@ class NearDIDResolver {
     this.NETWORK_ID = network_id;
   }
 
-  async getNear(): Promise<Near> {
-    const keyStore = new keyStores.InMemoryKeyStore();
-    return await connect({
+  private isNamedAccount(did: string): boolean {
+    const accountId = did.replace('did:near:', '');
+    return /^[a-z0-9_\-\.]+\.testnet$|\.near$/i.test(accountId);
+  }
+
+  private isBase58Did(did: string): boolean {
+    const identifier = did.replace('did:near:', '');
+    return /^[1-9A-HJ-NP-Za-km-z]{44,50}$/.test(identifier);
+  }
+
+  private async getNear() {
+    return connect({
       networkId: this.NETWORK_ID,
-      keyStore,
       nodeUrl: this.RPC_URL,
-      headers: {},
+      deps: { keyStore: new keyStores.InMemoryKeyStore() },
     });
   }
 
-  extractAccountId(did: string): string {
-    if (!did.startsWith("did:near:")) {
-      throw new Error("Invalid DID format");
-    }
-    return did.substring("did:near:".length);
-  }
-
-  public async getPublicKeyFromRPC(accountId: string): Promise<string> {
-    const provider = new providers.JsonRpcProvider({ url: this.RPC_URL });
-    const response: Record<string, any> = await provider.query({
-      request_type: "view_account",
-      finality: "final",
-      account_id: this.extractAccountId(accountId),
-    });
-    const rawKey = response.public_key.replace("ed25519:", "");
-    return bs58.encode(Buffer.from(bs58.decode(rawKey)));
-  }
-
-  public async resolveDID(accountId: string) {
+  private async getPublicKeyFromRPC(accountId: string): Promise<string> {
     const near = await this.getNear();
-    const account: Account = await near.account(this.CONTRACT_ID);
+    const account = await near.account(accountId);
+    const accessKeys = await account.getAccessKeys();
 
-    const owner: string = await account.viewFunction({
-      contractId: this.CONTRACT_ID,
-      methodName: "identity_owner",
-      args: { identity: accountId },
-    });
-
-    const did = `${accountId}`;
-    const keyId = `${did}#owner`;
-
-    // const publicKeyBase58 = await getPublicKeyFromRPC(owner);
-    let publicKeyBase58 = owner;
-
-    if (owner.startsWith("did:near:")) {
-      publicKeyBase58 = owner.replace("did:near:", "");
+    if (!accessKeys || accessKeys.length === 0) {
+      throw new Error(`No access keys found for account ${accountId}`);
     }
 
-    const document = {
-      "@context": "https://w3id.org/did/v1",
+    const publicKey = accessKeys[0].public_key;
+    return publicKey.replace('ed25519:', '');
+  }
+
+  public async resolveDID(did: string) {
+    const identifier = did.replace('did:near:', '');
+    let publicKeyBase58 = '';
+
+    if (this.isNamedAccount(did)) {
+      try {
+        publicKeyBase58 = await this.getPublicKeyFromRPC(identifier);
+      } catch (err) {
+        throw new Error(`Named account ${identifier} not found`);
+      }
+    } else if (this.isBase58Did(did)) {
+      const near = await this.getNear();
+      const account: Account = await near.account(this.CONTRACT_ID);
+
+      const owner: string | null = await account.viewFunction({
+        contractId: this.CONTRACT_ID,
+        methodName: 'identity_owner',
+        args: { identity: did },
+      });
+
+      if (!owner || owner === 'null') {
+        throw new Error(`DID ${did} not registered in ${this.CONTRACT_ID}`);
+      }
+
+      publicKeyBase58 = owner.startsWith('did:near:')
+        ? owner.replace('did:near:', '')
+        : owner;
+    } else {
+      throw new Error(`Invalid did:near format`);
+    }
+
+    const keyId = `${did}#owner`;
+    return {
+      '@context': 'https://w3id.org/did/v1',
       id: did,
       verificationMethod: [
         {
           id: keyId,
-          type: "Ed25519VerificationKey2018",
+          type: 'Ed25519VerificationKey2018',
           controller: did,
           publicKeyBase58,
         },
@@ -75,8 +89,6 @@ class NearDIDResolver {
       authentication: [keyId],
       assertionMethod: [keyId],
     };
-
-    return document;
   }
 }
 
