@@ -16,6 +16,9 @@ jest.mock("near-api-js", () => {
             if (methodName === "identity_owner") {
               return "did:near:CF5RiJYh4EVmEt8UADTjoP3XaZo1NPWxv6w5TmkLqjpR";
             }
+        },
+        getAccessKeys: async () => {
+          return [{access_key: {permission: "FullAccess"}, public_key: "ed25519:7WLUHT69sw5UpYK9xAY5cbdWKf4vSMruXzwfbL999zXo"}]
         }
       }),
     }),
@@ -59,6 +62,28 @@ describe("resolveDID", () => {
       ],
       authentication: ["did:near:CF5RiJYh4EVmEt8UADTjoP3XaZo1NPWxv6w5TmkLqjpR#owner"],
       assertionMethod: ["did:near:CF5RiJYh4EVmEt8UADTjoP3XaZo1NPWxv6w5TmkLqjpR#owner"],
+    });
+  });
+
+  it("should return a valid DID Document for named account", async () => {
+    const did = "did:near:geinergv.testnet";
+    const doc = await resolver.resolveDID(did);
+
+    const id = did + "#owner"
+
+    expect(doc).toEqual({
+      "@context": "https://w3id.org/did/v1",
+      id: did,
+      verificationMethod: [
+        {
+          id: id,
+          type: "Ed25519VerificationKey2018",
+          controller: did,
+          publicKeyBase58: "7WLUHT69sw5UpYK9xAY5cbdWKf4vSMruXzwfbL999zXo",
+        },
+      ],
+      authentication: [id],
+      assertionMethod: [id],
     });
   });
 });
