@@ -18,7 +18,7 @@ export class NearDIDResolver {
   private readonly networks: Record<string, NetworkConfig>;
 
   constructor(options: NearResolverOptions);
-  constructor(contract_id: string, rpc_url?: string, network_id?: string);
+  constructor(contract_id: string|NearResolverOptions, rpc_url?: string, network_id?: string);
   constructor(contract_id: string|NearResolverOptions, rpc_url: string = "", network_id: string = "testnet") {
     if (typeof contract_id === "object") {
       const options = contract_id;
