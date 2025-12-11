@@ -89,7 +89,10 @@ export class NearDIDResolver {
         }
     })
     return {
-      '@context': 'https://w3id.org/did/v1',
+      '@context': [
+        "https://www.w3.org/ns/did/v1",
+        "https://w3id.org/security/suites/ed25519-2018/v1"
+      ],
       id: did,
       verificationMethod,
       authentication: [keyId],
