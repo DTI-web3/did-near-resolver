@@ -1,23 +1,25 @@
-# NearDIDResolver SDK (TypeScript)
+# @kaytrust/did-near-resolver
 
 A lightweight TypeScript SDK to resolve `did:near:<identifier>` DIDs from a NEAR smart contract registry and/or NEAR accounts.
 
 ## 📦 Installation
 
 ```bash
-npm install near-api-js bs58
+npm install @kaytrust/did-near-resolver near-api-js bs58 did-resolver
 ```
 
 Or with Yarn:
 
 ```bash
-yarn add near-api-js bs58
+yarn add @kaytrust/did-near-resolver near-api-js bs58 did-resolver
 ```
 
 ## 🚀 Usage
 
+### Standalone Usage
+
 ```ts
-import NearDIDResolver from './NearDIDResolver';
+import { NearDIDResolver } from '@kaytrust/did-near-resolver';
 
 const resolver = new NearDIDResolver(
   'registry.contract.testnet',
@@ -29,25 +31,66 @@ const didDocument = await resolver.resolveDID('did:near:CF5RiJYh4EVmEt8UADTjoP3X
 console.log(didDocument);
 ```
 
-## 🔧 Constructor
+### Usage with `did-resolver`
+
+This is the recommended way to use this package if you are working with multiple DID methods.
+
+```ts
+import { Resolver } from 'did-resolver';
+import { getResolver } from '@kaytrust/did-near-resolver';
+
+const nearResolver = getResolver(
+  'registry.contract.testnet',
+  'https://rpc.testnet.near.org',
+  'testnet'
+);
+
+const resolver = new Resolver({
+  ...nearResolver,
+  // ...other resolvers
+});
+
+const result = await resolver.resolve('did:near:CF5RiJYh4EVmEt8UADTjoP3XaZo1NPWxv6w5TmkLqjpR');
+console.log(result.didDocument);
+```
+
+## 🔧 Configuration
+
+The `NearDIDResolver` constructor supports single network configuration or multiple networks.
+
+### Single Network
 
 ```ts
 new NearDIDResolver(contractId: string, rpcUrl: string, networkId: string = 'testnet')
 ```
 
-* `contractId`: The NEAR smart contract that implements `identity_owner`.
-* `rpcUrl`: RPC URL for NEAR network.
-* `networkId`: NEAR network (e.g., `testnet`, `mainnet`).
+### Multiple Networks
 
-## 🔍 `resolveDID(did: string)`
+You can configure multiple networks (e.g. testnet and mainnet) by passing an options object.
+
+```ts
+const resolver = new NearDIDResolver({
+  networks: [
+    {
+      networkId: 'testnet',
+      contractId: 'registry.contract.testnet',
+      rpcUrl: 'https://rpc.testnet.near.org'
+    },
+    {
+      networkId: 'mainnet',
+      contractId: 'registry.contract.near',
+      rpcUrl: 'https://rpc.mainnet.near.org'
+    }
+  ]
+});
+```
+
+## 🔍 Resolution Strategy
 
 Resolves a `did:near:<base58PublicKey | accountId>` into a DID Document.
 
-### Resolution Strategy:
-
-* Calls the `identity_owner` view function on the specified contract.
-* If the result is a `did:near:<key>`, it strips the prefix.
-* Otherwise assumes it’s a base58-encoded Ed25519 public key.
+*   **Implicit DIDs:** If the identifier is a base58-encoded public key, it generates a DID Document with that key as the verification method.
+*   **Registered DIDs:** If the identifier is a NEAR account ID (e.g. `alice.testnet`), it queries the configured smart contract (`identity_owner` method) to retrieve the associated public key(s).
 
 #### Example output:
 
@@ -71,11 +114,7 @@ Resolves a `did:near:<base58PublicKey | accountId>` into a DID Document.
 }
 ```
 
----
 
-## 🧰 `getPublicKeyFromRPC(accountId: string): Promise<string>`
-
-Fetches the public key of a NEAR account directly from the RPC (not from the registry).
 
 ---
 
@@ -103,4 +142,4 @@ To test your resolver:
 
 ## 📄 License
 
-MIT — use freely in your own DID resolver stacks and NEAR integrations.
+ISC
