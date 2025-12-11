@@ -48,8 +48,8 @@ describe("resolveDID", () => {
     resolver = new NearDIDResolver(CONTRACT_ID, RPC_URL);
     resolver_both = new NearDIDResolver({
       networks: [
-        {contractId: CONTRACT_ID, rpcUrl: RPC_URL_MAINNET, networkId: "near"},
         {contractId: CONTRACT_ID, rpcUrl: RPC_URL, networkId: "testnet"},
+        {contractId: CONTRACT_ID, rpcUrl: RPC_URL_MAINNET, networkId: "near"},
       ],
     });
   });
